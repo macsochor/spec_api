@@ -6,6 +6,7 @@ Flask-RESTful==0.3.6
 Flask-Restless==0.17.0
 flask-restless-swagger==0.2.1
 Flask-SQLAlchemy==2.3.2
+gunicorn==19.9.0
 itsdangerous==0.24
 Jinja2==2.10
 MarkupSafe==1.0
