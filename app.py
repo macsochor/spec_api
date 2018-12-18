@@ -110,4 +110,5 @@ manager.create_api(TeamEvaluation, methods=['PATCH'], url_prefix='/update', allo
 
 manager.init_app(app)
 
-app.run()
+if __name__ == "__main__":
+    app.run()
