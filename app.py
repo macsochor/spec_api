@@ -1,11 +1,13 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_restless import APIManager
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/2018-10-18test.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/2018-12-12ad.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+CORS(app)
 db = SQLAlchemy(app)
 
 class Team(db.Model):
@@ -24,6 +26,7 @@ class Student(db.Model):
     last_name = db.Column(db.String(100))
     role = db.Column(db.String(100))
     lab_attendances = db.relationship('LabAttendance', backref='student', lazy=True)
+    sprint_checks = db.relationship('SprintCheck', backref='student', lazy=True)
     knowledge_area_masteries = db.relationship('KnowledgeAreaMastery', backref='student', lazy=True)
     guided_practices = db.relationship('GuidedPractice', backref='student', lazy=True)
     team_evaluations_given = db.relationship('TeamEvaluation', backref='evaluator', lazy='dynamic', foreign_keys='TeamEvaluation.evaluator_id')
@@ -35,11 +38,20 @@ class LabAttendance(db.Model):
     date = db.Column(db.String(100), nullable=False)
     attended = db.Column(db.Boolean)
 
+class SprintCheck(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.comp_id'), nullable=False)
+    date = db.Column(db.String(100), nullable=False)
+    passed = db.Column(db.Boolean, nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    comment = db.Column(db.String(10000), nullable=False)
+
 class GuidedPractice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('student.comp_id'), nullable=False)
     date = db.Column(db.String(100), nullable=False)
-    passed = db.Column(db.Boolean)
+    passed = db.Column(db.Boolean, nullable=False)
+    title = db.Column(db.String(100), nullable=False)
 
 class TeamEvaluation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -53,6 +65,7 @@ class KnowledgeAreaMastery(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     student_id = db.Column(db.Integer, db.ForeignKey('student.comp_id'), nullable=False)
+    comment = db.Column(db.String(100))
     completed = db.Column(db.Boolean)
 
 
@@ -64,6 +77,16 @@ manager.create_api(Team, methods=['PATCH'], url_prefix='/update', allow_patch_ma
 manager.create_api(Team, methods=['DELETE'], url_prefix='/remove')
 manager.create_api(Team, methods=['POST'], url_prefix='/create')
 manager.create_api(Team, methods=['GET'], url_prefix='/get')
+
+manager.create_api(SprintCheck, methods=['POST'], url_prefix='/create')
+manager.create_api(SprintCheck, methods=['GET'], url_prefix='/get')
+manager.create_api(SprintCheck, methods=['DELETE'], url_prefix='/remove')
+manager.create_api(SprintCheck, methods=['PATCH'], url_prefix='/update', allow_patch_many=True)
+
+manager.create_api(KnowledgeAreaMastery, methods=['PATCH'], url_prefix='/update', allow_patch_many=True)
+manager.create_api(KnowledgeAreaMastery, methods=['DELETE'], url_prefix='/remove')
+manager.create_api(KnowledgeAreaMastery, methods=['POST'], url_prefix='/create')
+manager.create_api(KnowledgeAreaMastery, methods=['GET'], url_prefix='/get')
 
 manager.create_api(Student, methods=['PATCH'], url_prefix='/update', allow_patch_many=True)
 manager.create_api(Student, methods=['DELETE'], url_prefix='/remove')
