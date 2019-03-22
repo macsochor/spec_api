@@ -5,7 +5,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/2019-02-03test.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/201031et.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app)
 db = SQLAlchemy(app)
@@ -27,7 +27,8 @@ class Student(db.Model):
     role = db.Column(db.String(100))
     lab_attendances = db.relationship('LabAttendance', backref='student', lazy=True)
     sprint_checks = db.relationship('SprintCheck', backref='student', lazy=True)
-    knowledge_area_masteries = db.relationship('KnowledgeAreaMastery', backref='student', lazy=True)
+    knowledge_area_masteries = db.relationship('KnowledgeAreaMastery', backref='student', lazy=False)
+    pass_groups = db.relationship('PassGroup', backref='student', lazy=True)
     guided_practices = db.relationship('GuidedPractice', backref='student', lazy=True)
     team_evaluations_given = db.relationship('TeamEvaluation', backref='evaluator', lazy='dynamic', foreign_keys='TeamEvaluation.evaluator_id')
     team_evaluations_received = db.relationship('TeamEvaluation', backref='evaluatee', lazy='dynamic', foreign_keys='TeamEvaluation.evaluatee_id')
@@ -67,11 +68,36 @@ class KnowledgeAreaMastery(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('student.comp_id'), nullable=False)
     comment = db.Column(db.String(100))
     completed = db.Column(db.Boolean)
+    pass_groups = db.relationship('PassGroup', backref='knowledge_area_mastery', lazy=True)
 
+#A pass group is a method of completing a KAM
+class PassGroup(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.comp_id'), nullable=False)
+    kam_id = db.Column(db.Integer, db.ForeignKey('knowledge_area_mastery.id'), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    pass_group_pieces = db.relationship('PassGroupPiece', backref='pass_group', lazy=True)
+
+class PassGroupPiece(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pass_group_id = db.Column(db.Integer, db.ForeignKey('pass_group.id'), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    comment = db.Column(db.String(100))
+    completed = db.Column(db.Boolean)
 
 
 db.create_all()
 manager = APIManager(flask_sqlalchemy_db=db)
+
+manager.create_api(PassGroup, methods=['PATCH'], url_prefix='/update', allow_patch_many=True)
+manager.create_api(PassGroup, methods=['DELETE'], url_prefix='/remove')
+manager.create_api(PassGroup, methods=['POST'], url_prefix='/create')
+manager.create_api(PassGroup, methods=['GET'], url_prefix='/get')
+
+manager.create_api(PassGroupPiece, methods=['PATCH'], url_prefix='/update', allow_patch_many=True)
+manager.create_api(PassGroupPiece, methods=['DELETE'], url_prefix='/remove')
+manager.create_api(PassGroupPiece, methods=['POST'], url_prefix='/create')
+manager.create_api(PassGroupPiece, methods=['GET'], url_prefix='/get')
 
 manager.create_api(Team, methods=['PATCH'], url_prefix='/update', allow_patch_many=True)
 manager.create_api(Team, methods=['DELETE'], url_prefix='/remove')
